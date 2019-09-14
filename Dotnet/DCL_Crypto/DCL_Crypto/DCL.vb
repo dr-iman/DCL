@@ -75,12 +75,9 @@
         Private Shared Sub MakeNewAlpha(ByRef alpha As UInt16, key As String)
             Dim getCharOfkey As Char = key(0)
             Dim getAsciiOfChar As UInt16 = Asc(getCharOfkey)
-            If getAsciiOfChar.ToString.Length > 1 Then
-                alpha = getAsciiOfChar.ToString.Remove(1)
-            Else
-                alpha = getAsciiOfChar
-            End If
-        End Sub
+        alpha = getAsciiOfChar.ToString()(getAsciiOfChar.ToString.Length - 1).ToString
+        If alpha = 0 Then alpha = 5
+    End Sub
 
         ''' <summary>
         ''' اعتبار سنجی تکست ورودی ، کلید و آلفا در این تابع انجام می گیرد
@@ -237,9 +234,8 @@
                 '  Console.WriteLine(charListCode(index) & " = " & iPutten)
             Next
 
-            ' == 64 yadet nare
-            Dim hashLPN As String = hash.LPNStr
-            hash.LPNStr = CreateRPL(64 - hashLPN.Length, hashLPN)
+        Dim hashLPN As String = hash.LPNStr
+        hash.LPNStr = CreateRPL(64 - hashLPN.Length, hashLPN)
 
 
             For index = 0 To nCharList.Count - 1
@@ -250,85 +246,107 @@
             hash.result = hashLPN
             Return
         End Sub
-        Private Shared Function CreateRPL(size As Int16, ByRef hashPLN As String) As String
-            Dim getDevSignature As ULong = 1
-            Dim result As String = String.Empty
-            Dim sProcess As Long = 1
-            Dim sumTextplainAsc As Long = hash.len * hash.alpha
+    ''' <summary>
+    ''' تولید RPL از PLN
+    ''' </summary>
+    ''' <param name="size"></param>
+    ''' <param name="hashPLN"></param>
+    ''' <returns></returns>
+    Private Shared Function CreateRPL(size As Int16, ByRef hashPLN As String) As String
+        Dim getDevSignature As ULong = 1
+        Dim result As String = String.Empty
+        Dim sProcess As Long = 1
+        Dim sumTextplainAsc As Long = hash.len * hash.alpha
 
-            For index = 0 To signatureAscCode.Count - 1
-                getDevSignature += signatureAscCode(index)
-            Next
+        For index = 0 To signatureAscCode.Count - 1
+            getDevSignature += signatureAscCode(index) * (index + 1)
+        Next
 
-            For index = 0 To textPlainAscCode.Count - 1
-                sumTextplainAsc += textPlainAscCode(index)
-            Next
-            getDevSignature *= signatureAscCode.Count
-            getDevSignature += sumTextplainAsc
+        For index = 0 To textPlainAscCode.Count - 1
+            sumTextplainAsc += textPlainAscCode(index)
+        Next
+        getDevSignature *= signatureAscCode.Count
+        getDevSignature += sumTextplainAsc
 
-            Dim loopIndex As Integer = 1
-            While hashPLN.Length < 65
-                sProcess = ((hashPLN.Length * hash.alpha) * loopIndex) * getDevSignature
-                hashPLN &= sProcess.ToString
-                loopIndex += 1
-            End While
+        Dim loopIndex As Integer = 1
+        While hashPLN.Length < 65
+            sProcess = ((hashPLN.Length * hash.alpha) * loopIndex) * getDevSignature
+            hashPLN &= sProcess.ToString
+            loopIndex += 1
+        End While
 
-            hashPLN = hashPLN.Remove(64)
-            Return hashPLN
-        End Function
-        Private Shared Sub AlphaProcess()
-            Dim A As Decimal = 0
-            Dim I = 0, resultProcess As Decimal
-            Dim nRes As Boolean = Nothing
-            Dim getMatProcessSingleItem As Decimal = 0
-            For index = 0 To matProcessData.Count - 1
-                I += 1
-                getMatProcessSingleItem = matProcessData(index)
-                If index = 0 Then
-                    resultProcess = (getMatProcessSingleItem * hash.alpha) + A
-                    'Console.WriteLine("(" & getMatProcessSingleItem & " * " & hash.alpha & ")   = " & resultProcess)
-                    alphaProcessData.Add(resultProcess)
-                    GetAbst(index, resultProcess, A)
-                Else
-                    If nRes Then
-                        resultProcess = (getMatProcessSingleItem * hash.alpha) - A
-                        '       Console.WriteLine("(" & getMatProcessSingleItem & " * " & hash.alpha & ") -" & A & " = " & resultProcess)
-                    Else
-                        resultProcess = (getMatProcessSingleItem * hash.alpha) + A
-                        '    Console.WriteLine("(" & getMatProcessSingleItem & " * " & hash.alpha & ") +" & A & " = " & resultProcess)
-                    End If
-                    alphaProcessData.Add(resultProcess)
-                    nRes = GetAbst(index, resultProcess, A)
-                End If
-            Next
-        End Sub
-        Private Shared Function GetAbst(index As Integer, resultProcess As Decimal, ByRef getA As Decimal)
-            Dim getAStr As String = String.Empty
-            Dim gSumA As Integer = 0
-            If index Mod 2 <> 0 Then
-                'MsgBox(resultProcess & vbCrLf & textPlainAscCode(index) & vbCrLf & hash.len)
-                getA = (resultProcess / textPlainAscCode(index)) * hash.len
-                Return True
+        hashPLN = hashPLN.Remove(64)
+        Return hashPLN
+    End Function
+    ''' <summary>
+    ''' معادله آلفا
+    ''' </summary>
+    Private Shared Sub AlphaProcess()
+        Dim A As Decimal = 0
+        Dim I = 0, resultProcess As Decimal
+        Dim nRes As Boolean = Nothing
+        Dim getMatProcessSingleItem As Decimal = 0
+        For index = 0 To matProcessData.Count - 1
+            I += 1
+            getMatProcessSingleItem = matProcessData(index)
+            If index = 0 Then
+                resultProcess = (getMatProcessSingleItem * hash.alpha) + A
+                'Console.WriteLine("(" & getMatProcessSingleItem & " * " & hash.alpha & ")   = " & resultProcess)
+                alphaProcessData.Add(resultProcess)
+                GetAbst(index, resultProcess, A)
             Else
-
-                'برای سریز نشد در متون بالا این متغیر نیاز به خالی شدن دارد
-                'ناقص است.
-                getAStr = (resultProcess / textPlainAscCode(index)) * ((hash.len * (index + 1)) + textPlainAscCode(index))
-
-                If getAStr <= 865152361555812023 Then
-                    getA = getAStr
-
+                If nRes Then
+                    resultProcess = (getMatProcessSingleItem * hash.alpha) - A
+                    '       Console.WriteLine("(" & getMatProcessSingleItem & " * " & hash.alpha & ") -" & A & " = " & resultProcess)
                 Else
-                    getA = hash.len * hash.alpha * textPlainAscCode(index)
+                    resultProcess = (getMatProcessSingleItem * hash.alpha) + A
+                    '    Console.WriteLine("(" & getMatProcessSingleItem & " * " & hash.alpha & ") +" & A & " = " & resultProcess)
                 End If
-
-
-                ' MsgBox("N:(" & resultProcess & " / " & textPlainAscCode(index) & ") * " & "((" & hash.len & " * " & index + 1 & ") + " & textPlainAscCode(index) & ") = " & getA)
-                Return False
+                alphaProcessData.Add(resultProcess)
+                nRes = GetAbst(index, resultProcess, A)
+            End If
+        Next
+    End Sub
+    ''' <summary>
+    ''' تولید آلفا با محدودیت انتشار
+    ''' </summary>
+    ''' <param name="index"></param>
+    ''' <param name="resultProcess"></param>
+    ''' <param name="getA"></param>
+    ''' <returns></returns>
+    Private Shared Function GetAbst(index As Integer, resultProcess As Decimal, ByRef getA As Decimal)
+        Dim getAStr As String = String.Empty
+        Dim gSumA As Integer = 0
+        If index Mod 2 <> 0 Then
+            'MsgBox(resultProcess & vbCrLf & textPlainAscCode(index) & vbCrLf & hash.len)
+            getAStr = (resultProcess / textPlainAscCode(index)) * hash.len
+            If getAStr <= 865152361555812023 Then
+                getA = getAStr
+            Else
+                getA = hash.len * hash.alpha * textPlainAscCode(index)
             End If
 
-        End Function
-        Private Shared Sub GetAscListCode(value As String, ByRef refList As ArrayList, Optional rewriteList As Boolean = False)
+            Return True
+        Else
+
+            'برای سریز نشد در متون بالا این متغیر نیاز به خالی شدن دارد
+            'ناقص است.
+            getAStr = (resultProcess / textPlainAscCode(index)) * ((hash.len * (index + 1)) + textPlainAscCode(index))
+
+            If getAStr <= 865152361555812023 Then
+                getA = getAStr
+
+            Else
+                getA = hash.len * hash.alpha * textPlainAscCode(index)
+            End If
+
+
+            ' MsgBox("N:(" & resultProcess & " / " & textPlainAscCode(index) & ") * " & "((" & hash.len & " * " & index + 1 & ") + " & textPlainAscCode(index) & ") = " & getA)
+            Return False
+        End If
+
+    End Function
+    Private Shared Sub GetAscListCode(value As String, ByRef refList As ArrayList, Optional rewriteList As Boolean = False)
 
             If rewriteList = True And refList.Count > 0 Then
                 refList.Clear()
@@ -337,15 +355,15 @@
             Dim valueLen As Integer = value.Length - 1
             Dim ascCode As Int32 = 0
             Dim getSumAll As Integer = 0
-            For index = 0 To textPlainAscCode.Count - 1
-                getSumAll += textPlainAscCode(index) + (index * 4)
-            Next
-
-            For index = 0 To valueLen
-                ascCode = Asc(value(index)) + getSumAll
-                refList.Add(ascCode)
-            Next
-            Return
+        For index = 0 To valueLen
+            getSumAll += Asc(value(index))
+        Next
+        For index = 0 To valueLen
+            'ASC + SUMALL + (Index * 4)
+            ascCode = Asc(value(index)) + getSumAll + (index * 4)
+            refList.Add(ascCode)
+        Next
+        Return
         End Sub
     ''' <summary>
     ''' مرحله 4 ام الگوریتم دی سی ال برای تاثیر و تلفیق رشته با کلید رمزنگاری
@@ -358,7 +376,7 @@
         For iMain = 0 To txtPlainLen
             getAscChar = textPlainAscCode(iMain)
             For index = 0 To snLen
-                matSum += (getAscChar * signatureAscCode(index))
+                matSum += (getAscChar * signatureAscCode(index) * index)
             Next
             matProcessData.Add(matSum)
             matSum = 0

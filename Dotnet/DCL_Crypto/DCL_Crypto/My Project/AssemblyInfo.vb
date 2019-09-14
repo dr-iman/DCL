@@ -8,10 +8,10 @@ Imports System.Runtime.InteropServices
 
 ' Review the values of the assembly attributes
 
-<Assembly: AssemblyTitle("DCL_Crypto")>
+<Assembly: AssemblyTitle("DCL")>
 <Assembly: AssemblyDescription("")>
-<Assembly: AssemblyCompany("")>
-<Assembly: AssemblyProduct("DCL_Crypto")>
+<Assembly: AssemblyCompany("YODevs")>
+<Assembly: AssemblyProduct("DCL")>
 <Assembly: AssemblyCopyright("Copyright ©  2019")>
 <Assembly: AssemblyTrademark("")>
 
